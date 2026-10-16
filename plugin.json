@@ -1,0 +1,9 @@
+{
+  "name": "say",
+  "version": "1.0.0",
+  "description": "ASD-STE100 Simplified Technical English & Controlled Chinese output plugin for Claude Code. Multi-tier intensity control (60% lite / 80% default / 100% strict) with bilingual adaptation and subagent inheritance.",
+  "author": {
+    "name": "Liuxj"
+  },
+  "hooks": "./hooks/claude-hooks.json"
+}

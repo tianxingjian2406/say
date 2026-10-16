@@ -1,0 +1,19 @@
+{
+  "name": "say",
+  "version": "1.0.0",
+  "description": "ASD-STE100 Controlled Language Plugin for Claude Code (default 80% intensity, bilingual CN/EN)",
+  "main": "hooks/say-activate.js",
+  "scripts": {
+    "test": "node tests/test-plugin.js",
+    "lint-text": "node scripts/say-linter.js"
+  },
+  "keywords": [
+    "claude-code",
+    "plugin",
+    "say",
+    "asd-ste100",
+    "controlled-language",
+    "technical-writing"
+  ],
+  "license": "MIT"
+}

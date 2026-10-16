@@ -1,0 +1,41 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/say-activate.js\"",
+            "timeout": 5,
+            "statusMessage": "Loading say (ASD-STE100 80%) mode..."
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/say-subagent.js\"",
+            "timeout": 5,
+            "statusMessage": "Injecting say (ASD-STE100) rules into subagent..."
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/say-mode-tracker.js\"",
+            "timeout": 5,
+            "statusMessage": "Tracking say mode..."
+          }
+        ]
+      }
+    ]
+  }
+}

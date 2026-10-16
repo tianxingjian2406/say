@@ -1,0 +1,15 @@
+{
+  "name": "say",
+  "owner": {
+    "name": "Liuxj"
+  },
+  "plugins": [
+    {
+      "name": "say",
+      "source": "./",
+      "description": "ASD-STE100 controlled technical language output (60% lite / 80% default / 100% strict) for main agent and subagents.",
+      "version": "1.0.0"
+    }
+  ],
+  "description": "ASD-STE100 Simplified Technical English & Controlled Chinese output plugin marketplace."
+}

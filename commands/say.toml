@@ -1,0 +1,2 @@
+description = "Switch ASD-STE100 controlled language intensity (60 | 80 | 100 | off | status | default)"
+prompt = "Switch ASD-STE100 mode with argument: {{args}} (empty = 80% standard; 60/lite = 60%; 100/strict = 100%; off = disable; status = report current mode). Confirm in one STE100-compliant sentence and follow the loaded ASD-STE100 ruleset."
