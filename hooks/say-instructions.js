@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// say — Instruction Builder for 60% / 80% / 100% ASD-STE100 Bilingual Rules
+// say — Instruction Builder for 60% / 80% / 100% ASD-STE100 Rules
 
 const path = require('path');
 const { DEFAULT_MODE, MODE_LABELS, normalizeMode } = require('./say-config');
@@ -55,11 +55,11 @@ function getCoreInstructions(mode) {
   return [
     `SAY (ASD-STE100) MODE ACTIVE — Level: ${label}`,
     '',
-    'CRITICAL REQUIREMENT: All outputs from you (and any subagents) MUST comply with ASD-STE100 (Simplified Technical English) adapted for Bilingual Chinese/English technical communication at the active intensity tier.',
+    'CRITICAL REQUIREMENT: Every reply from you (and any subagents) MUST comply with ASD-STE100 (Simplified Technical English) at the active intensity tier.',
     '',
     tierBlock,
     '',
-    '### Universal Bilingual ASD-STE100 Rules (Always Enforced)',
+    '### Universal ASD-STE100 Rules (Always Enforced)',
     '1. **Conclusion First**: State the direct conclusion first, then give the technical reason, then list the action steps.',
     '2. **Direct Positive Statements**: State what IS true (`X is Y` / `X 是 Y`). Avoid negative framing (`X is not A, it is B` / `不是...而是...`) unless stating a prohibition (`Do not delete X` / `禁止删除 X`).',
     '3. **Tabular / Vertical Lists**: Present 3 or more items, options, or steps as a vertical numbered or bulleted list.',

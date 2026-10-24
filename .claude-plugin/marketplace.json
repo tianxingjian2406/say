@@ -7,9 +7,9 @@
     {
       "name": "say",
       "source": "./",
-      "description": "ASD-STE100 controlled technical language output (60% lite / 80% default / 100% strict) for main agent and subagents. Also installs into 19 more harnesses via scripts/install.js.",
-      "version": "1.2.0"
+      "description": "Hook-enforced ASD-STE100 controlled replies (60% lite / 80% default / 100% strict) for main agent and subagents. A Stop-hook gate audits every finished reply. Also installs into 19 more harnesses via scripts/install.js.",
+      "version": "1.3.0"
     }
   ],
-  "description": "ASD-STE100 Simplified Technical English & Controlled Chinese output plugin marketplace."
+  "description": "Hook-enforced ASD-STE100 controlled reply plugin marketplace."
 }

@@ -4,10 +4,10 @@
 
 <div align="center">
   <h1>say</h1>
-  <p><b>ASD-STE100 controlled technical language for your coding agent. English and Chinese.</b></p>
+  <p><b>Make your coding agent reply in ASD-STE100 controlled technical language.</b></p>
   <p>English · <a href="README.zh-CN.md">简体中文</a></p>
   <a href="https://github.com/tianxingjian2406/say/stargazers"><img src="https://img.shields.io/github/stars/tianxingjian2406/say?style=flat-square" alt="Stars"></a>
-  <img src="https://img.shields.io/badge/version-1.2.0-blue?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.3.0-blue?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/harnesses-21%20%2B%20AGENTS.md-green?style=flat-square" alt="Harnesses">
   <img src="https://img.shields.io/badge/default%20tier-80%25-orange?style=flat-square" alt="Default tier">
   <img src="https://img.shields.io/badge/platform-Node.js%20%7C%20Windows%20%7C%20macOS%20%7C%20Linux-lightgrey?style=flat-square" alt="Platform">
@@ -16,11 +16,11 @@
 
 ---
 
-**say** makes coding agents write in ASD-STE100 controlled technical language. It enforces short sentences, active voice, one action per sentence, and a fixed verb set. Rules cover English and Simplified Chinese. The default intensity is 80%.
+**say** makes coding agents reply in ASD-STE100 controlled technical language. It enforces short sentences, active voice, one action per sentence, and a fixed verb set. Rules cover English and Simplified Chinese. The default intensity is 80%.
 
 ## The problem it solves
 
-Agent output drifts. Compound sentences grow, passive voice spreads, and dummy verbs (`utilize`, `initiate`, `进行`, `加以`) blur every step. You reread a reply twice before you can act on it. ASD-STE100, the writing standard from aviation maintenance, removes that friction. say ports it to your terminal and exempts AI, CS, and math terms from the lock, so `tensor`, `gradient`, and `正则化` stay untouched.
+Agent output drifts. Compound sentences grow, passive voice spreads, and dummy verbs (`utilize`, `initiate`, `进行`, `加以`) blur every step. You reread a reply twice before you can act on it. ASD-STE100, the controlled-language standard from aviation maintenance, removes that friction. say ports it to your terminal and exempts AI, CS, and math terms from the lock, so `tensor`, `gradient`, and `正则化` stay untouched.
 
 ## Three intensity tiers
 
@@ -34,7 +34,7 @@ Agent output drifts. Compound sentences grow, passive voice spreads, and dummy v
 
 | Harness | Rules load from | Skills | `/say` command |
 | --- | --- | --- | --- |
-| Claude Code | plugin hooks: session start, every turn, subagents | yes | yes |
+| Claude Code | plugin hooks: session start, every turn, reply gate, subagents | yes | yes |
 | ZCode | plugin hooks, same as Claude Code | yes | yes |
 | Codex CLI | `~/.codex/AGENTS.md` block | yes | yes (prompts) |
 | OpenCode | `~/.config/opencode/AGENTS.md` block | yes | yes |
@@ -58,39 +58,29 @@ Agent output drifts. Compound sentences grow, passive voice spreads, and dummy v
 
 Every harness that reads [AGENTS.md](https://agents.md) also works: Zed, Jules, Warp, VS Code, Junie, Devin, Aider. Install with `--project` and the block lands in your project `AGENTS.md`.
 
-On Claude Code and ZCode, hooks re-anchor the rules every turn, so the tier holds across long sessions and subagents inherit it. Everywhere else, the rules load at session start and the `/say` command reloads them on call.
+On Claude Code and ZCode, hooks enforce the tier end to end. Session start injects the rules. Every turn re-anchors them. A reply gate audits each finished reply, and a reply below the tier gets one forced rewrite. Subagents inherit the tier. Everywhere else, the rules load at session start, and the `/say` command reloads them on call.
 
 ## Install
 
-Claude Code, full plugin with hooks:
+### Automatic install
+
+One installer covers all 21 harnesses in the table above. It needs Node.js 14 or newer:
+
+```bash
+git clone https://github.com/tianxingjian2406/say
+node say/scripts/install.js <agent>   # one agent: codex, gemini, cursor, ...
+node say/scripts/install.js all       # every harness on your machine
+node say/scripts/install.js --list    # all supported agents
+```
+
+Claude Code and ZCode can instead install the full plugin, hooks included:
 
 ```bash
 claude plugin marketplace add tianxingjian2406/say
 claude plugin install say@say
 ```
 
-Any other harness, one command each:
-
-```bash
-git clone https://github.com/tianxingjian2406/say
-node say/scripts/install.js codex    # codex | gemini | qwen | iflow | opencode | hermes | pi
-node say/scripts/install.js cursor   # cursor | windsurf | cline | roo | kilo | goose | crush
-node say/scripts/install.js copilot  # copilot | trae | kimi | amp | droid | zcode | claude
-node say/scripts/install.js all      # every harness at once
-```
-
-The installer copies the `say` and `say-check` skills, writes the slash commands in each harness's format, and manages one marked rule block per harness. It needs Node.js 14 or newer.
-
-Prefer manual setup? The repo ships ready-made bundles from `node scripts/install.js embed`:
-
-- `.claude-plugin/`, `.claude/`, `.zcode/` for Claude Code and ZCode
-- `.codex-plugin/` for Codex (copy its contents into `~/.codex/`)
-- `.opencode/`, `.pi/`, `.hermes/` for OpenCode, pi, Hermes
-- `.gemini/`, `.qwen/`, `.iflow/` for the Gemini-family CLIs
-- `.cursor/`, `.windsurf/`, `.clinerules/`, `.roo/`, `.kilocode/`, `.trae/`, `.github/` rule files
-- Root `AGENTS.md` plus `CLAUDE.md` / `GEMINI.md` / `QWEN.md` / `IFLOW.md` / `CRUSH.md` / `.goosehints`
-
-Options:
+Every install copies the same three things: the `say` and `say-check` skills, the slash commands in your harness's format, and one marked rule block. Options:
 
 - `--tier 60|80|100` sets the block intensity. Default 80.
 - `--project` writes into the current project (`.cursor/rules/say.mdc`, `GEMINI.md`, `AGENTS.md`, and so on) instead of your home directory.
@@ -98,6 +88,16 @@ Options:
 - `--dry-run` prints every action and writes nothing.
 
 On hook harnesses, the default tier also follows this priority: env `SAY_DEFAULT_MODE` > repo `.say.json` > user config > 80%.
+
+### Manual install
+
+Copy the same three things by hand:
+
+1. Rules. Copy the marked block from [`AGENTS.md`](AGENTS.md) into your harness instructions file (`CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, or its rules directory).
+2. Skills. Copy `skills/say` and `skills/say-check` into your harness skills directory.
+3. Commands. Copy `commands/say.md` and `commands/say-check.md`, or their `.toml` twins for the Gemini family, into your harness commands directory.
+
+The repo also ships ready-made bundles for every harness (`.claude/`, `.zcode/`, `.codex-plugin/`, `.cursor/`, and more), generated by `node scripts/install.js embed`. Copy the bundle for your harness into your home directory or project root.
 
 ## Commands
 
@@ -124,14 +124,18 @@ node scripts/say-linter.js --text "对模型进行训练之前必须先读取配
 ```text
 say/
 ├── .claude-plugin/       plugin manifest + marketplace entry
-├── hooks/                session hooks (Claude Code, ZCode)
+├── hooks/                session, turn, and reply-gate hooks (Claude Code, ZCode)
 ├── skills/               say + say-check, portable SKILL.md
 ├── commands/             slash commands, .md and .toml
 ├── scripts/              installer, embed mode, quantitative linter
-├── tests/                npm test, 10 suites
+├── tests/                npm test, 11 suites
 ├── AGENTS.md ...         generated rule files and harness bundles
 └── .codex-plugin/ ...    rerun `node scripts/install.js embed` after edits
 ```
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). It covers the dev loop and the commit message convention.
 
 ## License
 

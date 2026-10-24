@@ -1,7 +1,7 @@
 ---
 name: say
 description: >
-  ASD-STE100 Simplified Technical English & Controlled Chinese output mode.
+  ASD-STE100 Simplified Technical English & Controlled Chinese reply mode.
   Multi-tier intensity control: 60% (lite), 80% (default standard), 100% (strict).
   Use for /say, "ste mode", "STE100".
 ---
@@ -22,7 +22,7 @@ Default intensity is **80% (Standard)**: 100% compliance with ASD-STE100 core gr
 
 ---
 
-## Core Bilingual Rules (80% Default Standard)
+## Core Rules (80% Default Standard)
 
 ### 1. Sentence Length & Paragraph Limits
 - **English**:

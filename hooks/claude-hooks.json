@@ -36,6 +36,18 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/say-guard.js\"",
+            "timeout": 10,
+            "statusMessage": "Auditing reply against ASD-STE100..."
+          }
+        ]
+      }
     ]
   }
 }

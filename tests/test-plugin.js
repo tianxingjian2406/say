@@ -52,11 +52,13 @@ test('2. Runtime persistence & per-session state management', () => {
   assert.strictEqual(readMode('sess-001'), 'off');
 });
 
-test('3. Instructions generator outputs tier-specific bilingual rules', () => {
+test('3. Instructions generator outputs tier-specific rules without bilingual framing', () => {
   const rules80 = getCoreInstructions('80');
   assert.ok(rules80.includes('STANDARD (80% ASD-STE100)'));
   assert.ok(rules80.includes('20% Domain Exemption'));
   assert.ok(rules80.includes('操作指令句 <= 25 汉字'));
+  assert.ok(rules80.includes('Every reply from you'));
+  assert.ok(!rules80.includes('Bilingual'), 'positioning must not claim bilingual adaptation');
 
   const rules60 = getCoreInstructions('60');
   assert.ok(rules60.includes('LITE (60% ASD-STE100)'));
@@ -136,6 +138,69 @@ test('7. Quantitative Linter scores STE100-compliant vs non-compliant bilingual 
   assert.ok(resBad.score < 80, 'Expected non-compliant score < 80, got ' + resBad.score);
   assert.strictEqual(resBad.passed, false);
   assert.ok(resBad.violations.length >= 4);
+});
+
+test('7b. Stop hook (say-guard.js) blocks one non-compliant reply, then lets it pass', () => {
+  // The reply gate is registered in the plugin hook config.
+  const hookConfig = JSON.parse(fs.readFileSync(path.join(pluginRoot, 'hooks', 'claude-hooks.json'), 'utf8'));
+  assert.ok(Array.isArray(hookConfig.hooks.Stop), 'Stop hook must be registered');
+  assert.ok(hookConfig.hooks.Stop[0].hooks[0].command.includes('say-guard.js'));
+
+  const transcriptDir = fs.mkdtempSync(path.join(os.tmpdir(), 'say-guard-test-'));
+  const transcriptPath = path.join(transcriptDir, 'session.jsonl');
+  const runGuard = (payload) =>
+    execFileSync(process.execPath, [path.join(pluginRoot, 'hooks', 'say-guard.js')], {
+      input: JSON.stringify(payload),
+      env: { ...process.env, CLAUDE_CONFIG_DIR: tempClaudeDir },
+      encoding: 'utf8'
+    });
+  const writeTranscript = (text) =>
+    fs.writeFileSync(
+      transcriptPath,
+      [
+        JSON.stringify({ type: 'user', message: { role: 'user', content: 'explain' } }),
+        JSON.stringify({ type: 'assistant', message: { role: 'assistant', content: [{ type: 'text', text }] } })
+      ].join('\n') + '\n',
+      'utf8'
+    );
+
+  try {
+    const badReply = [
+      'This basically means that the gradient is utilized and initiated by the system.',
+      '这基本上意味着特征向量会被归一化层进行复杂的预处理，而且大概不是最优解而是次优解。'
+    ].join('\n');
+    const goodReply = [
+      '模型收敛速度取决于学习率。',
+      'The optimizer updates the model weights.',
+      '1. 读取配置文件。',
+      '2. 启动训练循环。'
+    ].join('\n');
+
+    // Non-compliant reply: blocked with the score and violations in the reason.
+    writeTranscript(badReply);
+    const blocked = runGuard({ session_id: 'guard-sess-1', cwd: pluginRoot, transcript_path: transcriptPath });
+    const verdict = JSON.parse(blocked);
+    assert.strictEqual(verdict.decision, 'block');
+    assert.ok(verdict.reason.includes('ASD-STE100'));
+    assert.ok(verdict.reason.includes('scored'));
+
+    // Loop guard: after one forced rewrite, stop_hook_active lets the reply pass.
+    const afterRewrite = runGuard({ session_id: 'guard-sess-1', cwd: pluginRoot, transcript_path: transcriptPath, stop_hook_active: true });
+    assert.strictEqual(afterRewrite.trim(), '');
+
+    // Compliant reply: no block.
+    writeTranscript(goodReply);
+    const pass = runGuard({ session_id: 'guard-sess-1', cwd: pluginRoot, transcript_path: transcriptPath });
+    assert.strictEqual(pass.trim(), '');
+
+    // Mode off: the gate stays silent.
+    setMode('off', 'guard-sess-1');
+    writeTranscript(badReply);
+    const off = runGuard({ session_id: 'guard-sess-1', cwd: pluginRoot, transcript_path: transcriptPath });
+    assert.strictEqual(off.trim(), '');
+  } finally {
+    fs.rmSync(transcriptDir, { recursive: true, force: true });
+  }
 });
 
 test('8. Multi-harness installer (scripts/install.js) installs, updates, and removes', () => {
