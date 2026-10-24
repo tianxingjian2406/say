@@ -20,7 +20,7 @@
 
 ## The problem it solves
 
-Agent output drifts. Compound sentences grow, passive voice spreads, and dummy verbs (`utilize`, `initiate`, `进行`, `加以`) blur every step. You reread a reply twice before you can act on it. ASD-STE100, the controlled-language standard from aviation maintenance, removes that friction. say ports it to your terminal and exempts AI, CS, and math terms from the lock, so `tensor`, `gradient`, and `正则化` stay untouched.
+Agent output drifts. Compound sentences grow, passive voice spreads, and dummy verbs (`utilize`, `initiate`, `commence`, `leverage`) blur every step. You reread a reply twice before you can act on it. ASD-STE100, the controlled-language standard from aviation maintenance, removes that friction. say ports it to your terminal and exempts AI, CS, and math terms from the lock, so `tensor`, `gradient`, and `backpropagation` stay untouched.
 
 ## Three intensity tiers
 
