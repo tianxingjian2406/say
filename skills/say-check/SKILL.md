@@ -9,7 +9,9 @@ description: >
 
 When invoked via `/say-check [text]`:
 1. If no text is provided, audit your most recent response in the conversation.
-2. You may run `node "<plugin_root>/scripts/say-linter.js" --text "<text>"` via Bash to get the exact quantitative score, or evaluate directly against the 5 STE100 metrics:
+2. Run the bundled linter to get the exact quantitative score, or evaluate directly against the 5 STE100 metrics:
+   - Standalone skill install (Codex / Hermes / OpenCode / pi): `node <skill-dir>/say-linter.js --text "<text>"` — the installer ships this file next to SKILL.md.
+   - Claude Code / ZCode plugin install: `node "<plugin_root>/scripts/say-linter.js" --text "<text>"`.
    - **M1 Sentence Length** (EN <=20w/25w, CN <=25/35 chars) — Weight 25%
    - **M2 Active Voice** (Zero `be + past participle` or `被/由...所`) — Weight 25%
    - **M3 Controlled Vocabulary** (Zero banned verbs/dummy verbs like `utilize`/`进行`/`加以`) — Weight 20%

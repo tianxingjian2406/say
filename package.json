@@ -1,15 +1,29 @@
 {
   "name": "say",
-  "version": "1.0.0",
-  "description": "ASD-STE100 Controlled Language Plugin for Claude Code (default 80% intensity, bilingual CN/EN)",
+  "version": "1.1.0",
+  "description": "ASD-STE100 Controlled Language for Claude Code, ZCode, Codex CLI, Hermes, OpenCode, pi, and Gemini CLI (default 80% intensity, bilingual CN/EN)",
   "main": "hooks/say-activate.js",
   "scripts": {
     "test": "node tests/test-plugin.js",
-    "lint-text": "node scripts/say-linter.js"
+    "lint-text": "node scripts/say-linter.js",
+    "install:claude": "node scripts/install.js claude",
+    "install:zcode": "node scripts/install.js zcode",
+    "install:codex": "node scripts/install.js codex",
+    "install:hermes": "node scripts/install.js hermes",
+    "install:opencode": "node scripts/install.js opencode",
+    "install:pi": "node scripts/install.js pi",
+    "install:gemini": "node scripts/install.js gemini",
+    "install:all": "node scripts/install.js all"
   },
   "keywords": [
     "claude-code",
+    "zcode",
+    "codex",
+    "hermes",
+    "opencode",
+    "gemini-cli",
     "plugin",
+    "skill",
     "say",
     "asd-ste100",
     "controlled-language",

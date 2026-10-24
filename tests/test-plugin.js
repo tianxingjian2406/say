@@ -138,5 +138,74 @@ test('7. Quantitative Linter scores STE100-compliant vs non-compliant bilingual 
   assert.ok(resBad.violations.length >= 4);
 });
 
+test('8. Multi-agent installer (scripts/install.js) installs, updates, and removes', () => {
+  const tempHome = fs.mkdtempSync(path.join(os.tmpdir(), 'say-install-test-'));
+  const exec = (args) =>
+    execFileSync(process.execPath, [path.join(pluginRoot, 'scripts', 'install.js'), ...args], {
+      encoding: 'utf8'
+    });
+
+  try {
+    // Install all agents into the temp home.
+    exec(['all', '--home', tempHome]);
+
+    // Skills landed for skill-based agents.
+    for (const rel of [
+      ['.claude', 'skills', 'say', 'SKILL.md'],
+      ['.zcode', 'skills', 'say', 'SKILL.md'],
+      ['.codex', 'skills', 'say', 'SKILL.md'],
+      ['.hermes', 'skills', 'say-check', 'SKILL.md'],
+      ['.pi', 'agent', 'skills', 'say', 'SKILL.md'],
+      ['.config', 'opencode', 'skills', 'say-check', 'SKILL.md']
+    ]) {
+      assert.ok(fs.existsSync(path.join(tempHome, ...rel)), 'missing skill file: ' + rel.join('/'));
+    }
+
+    // Linter shipped inside say-check for standalone installs.
+    assert.ok(fs.existsSync(path.join(tempHome, '.codex', 'skills', 'say-check', 'say-linter.js')));
+
+    // Commands landed with per-agent transforms.
+    const codexPrompt = fs.readFileSync(path.join(tempHome, '.codex', 'prompts', 'say.md'), 'utf8');
+    assert.ok(!codexPrompt.startsWith('---'), 'codex prompt must not carry YAML frontmatter');
+    assert.ok(!codexPrompt.includes('$ARGUMENTS'), 'codex prompt must not carry Claude placeholders');
+    const opencodeCmd = fs.readFileSync(path.join(tempHome, '.config', 'opencode', 'commands', 'say.md'), 'utf8');
+    assert.ok(opencodeCmd.includes('description:'), 'opencode command keeps description frontmatter');
+    assert.ok(!opencodeCmd.includes('argument-hint'), 'opencode command drops argument-hint');
+    assert.ok(fs.existsSync(path.join(tempHome, '.gemini', 'commands', 'say.toml')));
+
+    // Instruction blocks written exactly once per agent.
+    const claudeMd = fs.readFileSync(path.join(tempHome, '.claude', 'CLAUDE.md'), 'utf8');
+    assert.ok(claudeMd.includes('SAY (ASD-STE100) MODE ACTIVE'));
+    assert.ok(claudeMd.includes('STANDARD (80% ASD-STE100)'));
+    assert.strictEqual(claudeMd.split('<!-- say:begin -->').length - 1, 1, 'block must appear once');
+
+    // Re-running with a new tier replaces the block instead of duplicating it.
+    exec(['claude', '--home', tempHome, '--tier', '100']);
+    const claudeMd2 = fs.readFileSync(path.join(tempHome, '.claude', 'CLAUDE.md'), 'utf8');
+    assert.ok(claudeMd2.includes('STRICT (100% ASD-STE100)'));
+    assert.strictEqual(claudeMd2.split('<!-- say:begin -->').length - 1, 1, 'block must stay single after re-install');
+
+    // Pre-existing user content survives the block update.
+    const claudeMdPath = path.join(tempHome, '.claude', 'CLAUDE.md');
+    fs.writeFileSync(claudeMdPath, 'Keep this line.\n\n' + fs.readFileSync(claudeMdPath, 'utf8'), 'utf8');
+    const geminiMdPath = path.join(tempHome, '.gemini', 'GEMINI.md');
+    fs.writeFileSync(geminiMdPath, 'Keep this line.\n\n' + fs.readFileSync(geminiMdPath, 'utf8'), 'utf8');
+    exec(['gemini', '--home', tempHome]);
+    const geminiMd = fs.readFileSync(geminiMdPath, 'utf8');
+    assert.ok(geminiMd.startsWith('Keep this line.'));
+    assert.strictEqual(geminiMd.split('<!-- say:begin -->').length - 1, 1);
+
+    // Uninstall removes skills, commands, and blocks.
+    exec(['all', '--home', tempHome, '--uninstall']);
+    assert.ok(!fs.existsSync(path.join(tempHome, '.codex', 'skills', 'say')));
+    assert.ok(!fs.existsSync(path.join(tempHome, '.gemini', 'commands', 'say.toml')));
+    const claudeMd3 = fs.readFileSync(claudeMdPath, 'utf8');
+    assert.ok(!claudeMd3.includes('say:begin'));
+    assert.ok(claudeMd3.length > 0, 'uninstall keeps unrelated CLAUDE.md content');
+  } finally {
+    fs.rmSync(tempHome, { recursive: true, force: true });
+  }
+});
+
 fs.rmSync(tempClaudeDir, { recursive: true, force: true });
 console.log('\nALL ' + passed + ' TESTS PASSED.');
