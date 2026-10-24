@@ -138,18 +138,19 @@ test('7. Quantitative Linter scores STE100-compliant vs non-compliant bilingual 
   assert.ok(resBad.violations.length >= 4);
 });
 
-test('8. Multi-agent installer (scripts/install.js) installs, updates, and removes', () => {
+test('8. Multi-harness installer (scripts/install.js) installs, updates, and removes', () => {
   const tempHome = fs.mkdtempSync(path.join(os.tmpdir(), 'say-install-test-'));
   const exec = (args) =>
     execFileSync(process.execPath, [path.join(pluginRoot, 'scripts', 'install.js'), ...args], {
-      encoding: 'utf8'
+      encoding: 'utf8',
+      env: { ...process.env, XDG_CONFIG_HOME: '' }
     });
 
   try {
-    // Install all agents into the temp home.
+    // Install all 21 harnesses into the temp home.
     exec(['all', '--home', tempHome]);
 
-    // Skills landed for skill-based agents.
+    // Skills landed for skill-based harnesses.
     for (const rel of [
       ['.claude', 'skills', 'say', 'SKILL.md'],
       ['.zcode', 'skills', 'say', 'SKILL.md'],
@@ -164,19 +165,37 @@ test('8. Multi-agent installer (scripts/install.js) installs, updates, and remov
     // Linter shipped inside say-check for standalone installs.
     assert.ok(fs.existsSync(path.join(tempHome, '.codex', 'skills', 'say-check', 'say-linter.js')));
 
-    // Commands landed with per-agent transforms.
+    // Commands landed with per-harness transforms.
     const codexPrompt = fs.readFileSync(path.join(tempHome, '.codex', 'prompts', 'say.md'), 'utf8');
     assert.ok(!codexPrompt.startsWith('---'), 'codex prompt must not carry YAML frontmatter');
     assert.ok(!codexPrompt.includes('$ARGUMENTS'), 'codex prompt must not carry Claude placeholders');
     const opencodeCmd = fs.readFileSync(path.join(tempHome, '.config', 'opencode', 'commands', 'say.md'), 'utf8');
     assert.ok(opencodeCmd.includes('description:'), 'opencode command keeps description frontmatter');
     assert.ok(!opencodeCmd.includes('argument-hint'), 'opencode command drops argument-hint');
-    assert.ok(fs.existsSync(path.join(tempHome, '.gemini', 'commands', 'say.toml')));
+    for (const p of [
+      ['.gemini', 'commands', 'say.toml'],
+      ['.qwen', 'commands', 'say.toml'],
+      ['.iflow', 'commands', 'say-check.toml']
+    ]) {
+      assert.ok(fs.existsSync(path.join(tempHome, ...p)), 'missing command: ' + p.join('/'));
+    }
 
-    // Instruction blocks written exactly once per agent.
+    // Rule files and blocks landed for the rule-file harnesses.
+    const mdc = fs.readFileSync(path.join(tempHome, '.cursor', 'rules', 'say.mdc'), 'utf8');
+    assert.ok(mdc.includes('alwaysApply: true'), 'cursor rule must set alwaysApply');
+    assert.ok(mdc.includes('SAY (ASD-STE100) MODE ACTIVE'));
+    assert.ok(fs.existsSync(path.join(tempHome, '.codeium', 'windsurf', 'rules', 'say.md')));
+    assert.ok(fs.existsSync(path.join(tempHome, '.clinerules', 'say.md')));
+    assert.ok(fs.existsSync(path.join(tempHome, '.roo', 'rules', 'say.md')));
+    assert.ok(fs.existsSync(path.join(tempHome, '.kilocode', 'rules', 'say.md')));
+    assert.ok(fs.existsSync(path.join(tempHome, '.config', 'goose', 'goosehints')));
+    assert.ok(fs.existsSync(path.join(tempHome, '.config', 'AGENTS.md')), 'crush global block missing');
+    const copilot = fs.readFileSync(path.join(tempHome, '.github', 'copilot-instructions.md'), 'utf8');
+    assert.ok(copilot.includes('STANDARD (80% ASD-STE100)'));
+
+    // Instruction blocks written exactly once per harness.
     const claudeMd = fs.readFileSync(path.join(tempHome, '.claude', 'CLAUDE.md'), 'utf8');
     assert.ok(claudeMd.includes('SAY (ASD-STE100) MODE ACTIVE'));
-    assert.ok(claudeMd.includes('STANDARD (80% ASD-STE100)'));
     assert.strictEqual(claudeMd.split('<!-- say:begin -->').length - 1, 1, 'block must appear once');
 
     // Re-running with a new tier replaces the block instead of duplicating it.
@@ -199,12 +218,55 @@ test('8. Multi-agent installer (scripts/install.js) installs, updates, and remov
     exec(['all', '--home', tempHome, '--uninstall']);
     assert.ok(!fs.existsSync(path.join(tempHome, '.codex', 'skills', 'say')));
     assert.ok(!fs.existsSync(path.join(tempHome, '.gemini', 'commands', 'say.toml')));
+    assert.ok(!fs.existsSync(path.join(tempHome, '.cursor', 'rules', 'say.mdc')));
     const claudeMd3 = fs.readFileSync(claudeMdPath, 'utf8');
     assert.ok(!claudeMd3.includes('say:begin'));
     assert.ok(claudeMd3.length > 0, 'uninstall keeps unrelated CLAUDE.md content');
   } finally {
     fs.rmSync(tempHome, { recursive: true, force: true });
   }
+});
+
+test('8b. Embed mode regenerates harness bundles and cleans up', () => {
+  const embedDir = fs.mkdtempSync(path.join(os.tmpdir(), 'say-embed-test-'));
+  const exec = (args) =>
+    execFileSync(process.execPath, [path.join(pluginRoot, 'scripts', 'install.js'), ...args], {
+      encoding: 'utf8'
+    });
+
+  try {
+    exec(['embed', '--out', embedDir]);
+
+    const agentsMd = fs.readFileSync(path.join(embedDir, 'AGENTS.md'), 'utf8');
+    assert.ok(agentsMd.includes('SAY (ASD-STE100) MODE ACTIVE'), 'AGENTS.md block missing');
+    assert.ok(fs.existsSync(path.join(embedDir, '.codex-plugin', 'skills', 'say', 'SKILL.md')), '.codex-plugin skill missing');
+    const codexPrompt = fs.readFileSync(path.join(embedDir, '.codex-plugin', 'prompts', 'say.md'), 'utf8');
+    assert.ok(!codexPrompt.startsWith('---'), 'embedded codex prompt must be plain text');
+    assert.ok(fs.existsSync(path.join(embedDir, '.gemini', 'commands', 'say.toml')), '.gemini toml missing');
+    assert.ok(fs.existsSync(path.join(embedDir, '.qwen', 'commands', 'say.toml')), '.qwen toml missing');
+    assert.ok(fs.existsSync(path.join(embedDir, '.iflow', 'commands', 'say.toml')), '.iflow toml missing');
+    assert.ok(fs.existsSync(path.join(embedDir, '.hermes', 'skills', 'say', 'SKILL.md')), '.hermes skill missing');
+    assert.ok(fs.readFileSync(path.join(embedDir, '.cursor', 'rules', 'say.mdc'), 'utf8').includes('alwaysApply: true'), 'cursor mdc wrong');
+    for (const f of ['CLAUDE.md', 'GEMINI.md', 'QWEN.md', 'IFLOW.md']) {
+      assert.ok(fs.readFileSync(path.join(embedDir, f), 'utf8').includes('@AGENTS.md'), f + ' must import AGENTS.md');
+    }
+    assert.ok(fs.existsSync(path.join(embedDir, '.github', 'copilot-instructions.md')), 'copilot file missing');
+    assert.ok(fs.existsSync(path.join(embedDir, '.goosehints')), '.goosehints missing');
+
+    exec(['embed', '--out', embedDir, '--uninstall']);
+    assert.ok(!fs.existsSync(path.join(embedDir, 'AGENTS.md')), 'uninstall must remove AGENTS.md');
+    assert.ok(!fs.existsSync(path.join(embedDir, '.codex-plugin')), 'uninstall must remove .codex-plugin');
+    assert.ok(!fs.existsSync(path.join(embedDir, '.cursor')), 'uninstall must remove .cursor');
+  } finally {
+    fs.rmSync(embedDir, { recursive: true, force: true });
+  }
+});
+
+test('9. README correctness checker passes on both language files', () => {
+  const out = execFileSync(process.execPath, [path.join(pluginRoot, 'scripts', 'check-readme.js')], {
+    encoding: 'utf8'
+  });
+  assert.ok(out.includes('README check passed.'));
 });
 
 fs.rmSync(tempClaudeDir, { recursive: true, force: true });

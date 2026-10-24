@@ -1,0 +1,2 @@
+description = "Audit text or last response for ASD-STE100 compliance (>=80%) and rewrite"
+prompt = "Audit target ({{args}} or last response) against ASD-STE100 rules. Show compliance score %, violations, and STE100 rewrite."

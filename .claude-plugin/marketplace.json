@@ -7,8 +7,8 @@
     {
       "name": "say",
       "source": "./",
-      "description": "ASD-STE100 controlled technical language output (60% lite / 80% default / 100% strict) for main agent and subagents. Also installs into Codex CLI, Hermes, OpenCode, pi, Gemini CLI, and ZCode via scripts/install.js.",
-      "version": "1.1.0"
+      "description": "ASD-STE100 controlled technical language output (60% lite / 80% default / 100% strict) for main agent and subagents. Also installs into 19 more harnesses via scripts/install.js.",
+      "version": "1.2.0"
     }
   ],
   "description": "ASD-STE100 Simplified Technical English & Controlled Chinese output plugin marketplace."
